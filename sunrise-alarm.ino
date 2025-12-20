@@ -1,213 +1,114 @@
 
-#include <RTClib.h>
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <RTClib.h>           // real-time clock module
+#include <Adafruit_SSD1306.h> // OLED screen
+#include <Wire.h>             // two-wire (I2C) communication
 
-// Global constants definitions
-#define SCREEN_WIDTH            128
-#define SCREEN_HEIGHT           32
-#define SCREEN_ADDRESS          0x3C
-#define BUTTON_THRESHOLD        2.5
-#define LED_STRIP_UPDATE_PERIOD 0.5
-#define DISPLAY_UPDATE_PERIOD   1
+// Global variables shared between things:
+// Alarm currently active
+// Alarm enabled / disabled
+// Lights turned on / off
+// Light brightness percentage
 
-// Define peripheral objects
-RTC_DS3231 rtc;
+
+// #########################################################################
+// Display management and text printing
+
+constexpr uint8_t SCREEN_WIDTH      = 128;   // pixels
+constexpr uint8_t SCREEN_HEIGHT     = 32;    // pixels
+constexpr uint8_t SCREEN_ADDRESS    = 0x3C;  // I2C address
+
 Adafruit_SSD1306 display = Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
+
+void oledSetup() { // Initial setup of the OLED screen
+  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  display.clearDisplay();
+  display.setTextColor(WHITE);  // necessary
+  display.display();
+}
+
+constexpr uint8_t TEXT_HALF_HEIGHT  = 1;  // 8 pixels height  = 1/4 screen height
+constexpr uint8_t TEXT_QRTR_HEIGHT  = 2;  // 16 pixels height = 1/2 screen height
+
+// enum TextSize = {TEXT_SMALL, TEXT_MEDIUM, TEXT_LARGE};
+// void displayText(char* text, TextSize size) {
+//   display.setCursor(0, 0);
+//   display.println(text);
+// }
+
+
+// #########################################################################
+// RTC clock / alarm management
+
+RTC_DS3231 rtc;
+
+void rtcSetup() {
+
+}
+
+
+// #########################################################################
+// Button management
 
 // Pin definitions
 #define LED_STRIP           6
 #define CLOCK_INTERRUPT_PIN 2
-#define ALARM_OFF_BUTTON    A2
+#define ON_OFF_BUTTON       A7
+#define DISPLAY_ON_OFF_BTN  A6
+#define DECREASE_BUTTON     A2
+#define INCREASE_BUTTON     A0
+#define MODE_BUTTON         A3
+#define ALM_ENABLE_SWITCH   A1
 
-// EEPROM (non-volatile memory) address for storing alarm duration
-// #define EEPROM_ADDR_ALM_DURATION  0
-
-
-/* Global Variables: Options set by the user */
-int alarmDuration = 1; // Duration of alarm (time for LEDs to reach full brightness), in minutes
-
-
-/* Global variables */
-volatile bool alarmTriggered = false;
-bool alarmActive = false;
-DateTime alarmStart((uint32_t)0);
-
-
-/* Function declarations */
-void rtcSetup();
-void oledSetup();
-void onRTCAlarm();
-void setLEDBrightness();
-void refreshDisplay();
-void displayTime();
-bool isButtonPushed(int button_pin);
-float getPinVoltage(int pin);
-
-// In the main loop: an "AlarmTriggered" boolean. This is turned on by the "onRTCAlarm" method.
-// If that is set to True, we want to start the alarm, which is the LED strip. I want the time
-// it takes for the LED strip to reach full brightness to be adjustable by the user.
-// So maybe a function that takes the time since the alarm started, the desired total alarm time,
-// and spits out an integer (0 to 255) of how bright the LED strip should be.
-
-byte compteur;
-
-
-void setup() {
-  // Open Serial communication
-  Serial.begin(9600);
-
-  // Set up the RTC
-  rtcSetup();
-
-  // Set up the 0.91 OLED
-  oledSetup();
-
-  // Setup a alarm for 10 seconds from now
-  if(!rtc.setAlarm1(
-    rtc.now() + TimeSpan(5),
-    DS3231_A1_Second // this mode triggers the alarm when the seconds match. See Doxygen for other options
-  )) {
-    Serial.println("Error, alarm wasn't set!");
-  } else {
-    Serial.println("Alarm will happen in 5 seconds!");
-  }
-
-  // Set up Pins
-  pinMode(LED_STRIP, OUTPUT);
-}
-
-
-void loop() {
-  // When an alarm has been triggered by the RTC, turn on the alarm
-  if (alarmTriggered) {
-    alarmTriggered = false;
-    alarmActive = true;
-    alarmStart = rtc.now();
-  }
-
-  // Set LED brightness
-  static DateTime t;
-  if (!alarmActive) {
-    t = rtc.now();
-  } else {
-    if (rtc.now().unixtime() - t.unixtime() > LED_STRIP_UPDATE_PERIOD) {
-      setLEDBrightness();
-      t = rtc.now();
-    }
-  }
-  
-  // Set display output
-  refreshDisplay();
-
-  // Eventually this could be a sort of state machine
-  // Setting different user options is one state
-  // Regular function is another state
-  // So that when you are setting the user options I can just focus on that in the code
-  // Necessary? not sure
-
-}
-
-void onRTCAlarm() {
-  alarmTriggered = true;
-}
-
-void setLEDBrightness() {
-  uint32_t elapsedSec = rtc.now().unixtime() - alarmStart.unixtime();
-  float incrementPerSec = 255 / (alarmDuration * 60);
-  
-  uint8_t brightness = min((uint8_t)(elapsedSec * incrementPerSec), 255);
-  analogWrite(LED_STRIP, brightness);
-
-  // Serial.print(" Brightness: ");
-  // Serial.print(brightness);
-  // Serial.println(" / 255");
-}
-
-void refreshDisplay() {
-  static uint32_t lastRefresh = rtc.now().unixtime();
-  if (rtc.now().unixtime() - lastRefresh >= DISPLAY_UPDATE_PERIOD) {
-    lastRefresh = rtc.now().unixtime();
-  } else {
-    return;
-  }
-
-  display.clearDisplay();
-
-  display.setCursor(0, 0);
-  display.print("T ");
-  displayTime(rtc.now());
-
-  display.setCursor(0, 16);
-  display.print("A ");
-  displayTime(rtc.getAlarm1());
-
-  display.display();
-}
-
-void displayTime(DateTime time) {
-  uint8_t hour = time.hour();
-  uint8_t minute = time.minute();
-  uint8_t second = time.second();
-  
-  if (hour < 10) display.print("0");
-  display.print(hour);
-  display.print(":");
-  if (minute < 10) display.print("0");
-  display.print(minute);
-  display.print(":");
-  if (second < 10) display.print("0");
-  display.print(second);
-}
-
-bool isButtonPushed(int button_pin) {
-  return getPinVoltage(button_pin) > BUTTON_THRESHOLD;
-}
+#define BUTTON_THRESHOLD    2   // out of 5V
 
 float getPinVoltage(int pin) {
+  // Read the analog voltage (0-5V) from an analog input pin
   return 5 * (float)analogRead(pin) / 1024;
 }
 
-/* Setup of Peripherals */
-
-void rtcSetup() {
-  if(!rtc.begin()) {
-    Serial.println("Couldn't find RTC!");
-    Serial.flush();
-    while (1) delay(10);
-  }
-  if (rtc.lostPower()) {
-    // Adjust the date and time at compilation
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  }
-  // Disable 32K pin because we don't need it
-  rtc.disable32K();
-
-  // Make it so that RTC alarm will trigger interrupt
-  pinMode(CLOCK_INTERRUPT_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(CLOCK_INTERRUPT_PIN), onRTCAlarm, FALLING);
-
-  // Set alarm 1 & 2 flag to false (alarm 1 and 2 didn't happen yet)
-  // If not done this easily leads to problems, since both registers aren't reset on reboot/recompile
-  rtc.clearAlarm(1);
-  rtc.clearAlarm(2);
-
-  // Stop oscillating signals at SQW Pin, otherwise setAlarm1 will fail
-  rtc.writeSqwPinMode(DS3231_OFF);
-
-  // turn off alarm 2 (in case it isn't off already)
-  // again, this isn't done at reboot, so a previously set alarm could easily go overlooked
-  rtc.disableAlarm(2);
+bool isButtonPressed(int button_pin) {
+  return getPinVoltage(button_pin) > BUTTON_THRESHOLD;
 }
 
-void oledSetup() {
-  display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-  display.display();
-  delay(200);
+
+// #########################################################################
+// LED strip management
+
+
+
+
+// #########################################################################
+// State management, main dispatcher functions
+
+
+
+
+// #########################################################################
+// MAIN SETUP AND LOOP
+
+void setup() {
+  Serial.begin(9600); // open serial communication
+  oledSetup();
+}
+
+void loop() {
+  // Listen for a button click / event
+  // Handle any events / button clicks 
+  //    -> set variables
+  //    -> change the device state
+  // Update the screen
+  // Update the state of the lights based on global variables
+  //    e.g. lights on if alarm on, or they're turned on manually
+
   display.clearDisplay();
-  display.display();
   display.setTextSize(2);
-  display.setTextColor(WHITE);
+  display.setCursor(0, 16);
+  display.println("Hello");
+  display.display();
+
+  if (isButtonPressed(ALM_ENABLE_SWITCH)) {
+    Serial.println("ALM_ENABLE_SWITCH on");
+  }
+
+  delay(100);
 }
