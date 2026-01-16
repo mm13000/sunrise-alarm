@@ -33,7 +33,6 @@ enum State {
 };
 State currentState = HOME_DISPLAY_CLOCK;
 
-bool LEDsOn = false;
 uint8_t LEDbrightness = 0; // out of 255
 
 
@@ -369,7 +368,7 @@ void updateScreen() {
     case State::SET_CLOCK_MIN:
       printScreenSetMin();
       break;
-    case LED_ON:
+    case State::LED_ON:
       printScreenLEDOn();
       break;
   }
@@ -507,6 +506,7 @@ void runLEDOnOffBackBtnPush() {
       break;
     case State::LED_ON:
       LEDbrightness = 0;
+      dailyAlarmCurrentlyActive = false;
       currentState = State::HOME_DISPLAY_CLOCK;
       break;
   }
@@ -548,6 +548,7 @@ void runDecreaseBtnPush() {
       if (tempMin == 0) tempMin = 59; else tempMin -= 1;
       break;
     case State::LED_ON:
+      dailyAlarmCurrentlyActive = false;
       if (LEDbrightness > 0) LEDbrightness -= 1;
       break;
   }
@@ -591,6 +592,7 @@ void runIncreaseBtnPush() {
       if (tempMin > 59) tempMin = 0;
       break;
     case State::LED_ON:
+      dailyAlarmCurrentlyActive = false;
       if (LEDbrightness < 255) LEDbrightness += 1;
       break;
   }
