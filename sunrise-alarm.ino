@@ -45,6 +45,7 @@ uint8_t LEDbrightness = 0; // out of 255
 // "sleep" functionality, I should also attach a button to the D2 pin and allow the 
 // button to wake it up. But honestly, this all might be overkill. Does it really need 
 // to sleep if it is going to be plugged in all the time?
+// 
 // #define CLOCK_INTERRUPT_PIN 2
 // attachInterrupt(digitalPinToInterrupt(CLOCK_INTERRUPT_PIN), wakeISR, FALLING);
 
@@ -131,7 +132,7 @@ void enableDailyAlarm() {
 }
 
 void checkAlarm() {
-  if (isDailyAlarmTriggered()) {
+  if (isDailyAlarmTriggered() && dailyAlarmEnabled) {
     dailyAlarmCurrentlyActive = true;
     currentState = State::LED_ON;
   }
