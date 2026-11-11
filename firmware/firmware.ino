@@ -1,4 +1,5 @@
 
+#include "config.h"
 #include <RTClib.h>           // real-time clock module
 #include <Adafruit_SSD1306.h> // OLED screen
 #include <Wire.h>             // two-wire (I2C) communication
@@ -6,12 +7,12 @@
 // ######################################################################################
 // Global variables shared between things
 
-DateTime dailyAlarmTime = DateTime(2000, 1, 1, 6, 0, 0);
+DateTime dailyAlarmTime = DateTime(2000, 1, 1, DEFAULT_ALARM_HOUR, DEFAULT_ALARM_MINUTE, 0);
 bool dailyAlarmEnabled = false;
-uint8_t dailyAlarmDurationHours = 0;
-uint8_t dailyAlarmDurationMinutes = 30;
+uint8_t dailyAlarmDurationHours = DEFAULT_ALARM_DURATION_HOURS;
+uint8_t dailyAlarmDurationMinutes = DEFAULT_ALARM_DURATION_MINUTES;
 bool dailyAlarmCurrentlyActive = false;
-bool time24hr = true; // military / 24-hour time
+bool time24hr = DEFAULT_24_HOUR_MODE; // military / 24-hour time
 
 uint8_t tempHour = 0;
 uint8_t tempMin = 0;
@@ -141,10 +142,6 @@ void checkAlarm() {
 
 // ######################################################################################
 // Display  and text printing
-
-constexpr uint8_t SCREEN_WIDTH      = 128;   // pixels
-constexpr uint8_t SCREEN_HEIGHT     = 32;    // pixels
-constexpr uint8_t SCREEN_ADDRESS    = 0x3C;  // I2C address
 
 Adafruit_SSD1306 display = Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 
@@ -385,10 +382,8 @@ void updateScreen() {
 // ######################################################################################
 // LED strip 
 
-#define LED_CONTROL_SWITCH 6
-
 void LEDSetup() {
-  pinMode(LED_CONTROL_SWITCH, OUTPUT);
+  pinMode(LED_CONTROL_PIN, OUTPUT);
 }
 
 void updateLEDs() {
@@ -409,7 +404,7 @@ void updateLEDs() {
     progress = constrain(progress, 0.0, 1.0);
     LEDbrightness = (uint8_t)(progress * 255.0);
   }
-  analogWrite(LED_CONTROL_SWITCH, LEDbrightness);
+  analogWrite(LED_CONTROL_PIN, LEDbrightness);
 }
 
 
@@ -659,27 +654,16 @@ void runMenuEnterBtnPush() {
 // ######################################################################################
 // Buttons
 
-// Pin definitions
-#define HOME_BUTTON  A6
-#define LED_ON_OFF_BUTTON       A7
-#define DECREASE_BUTTON         A2
-#define INCREASE_BUTTON         A0
-#define MENU_ENTER_BUTTON       A3
-// #define ALM_ENABLE_SWITCH   A1
-
-constexpr float buttonVoltageThreshold = 2;   // out of 5V
-
 float getPinVoltage(int pin) {
   // Read the analog voltage (0-5V) from an analog input pin
   return 5 * (float)analogRead(pin) / 1024;
 }
 
 bool isButtonPressed(int button_pin) {
-  return getPinVoltage(button_pin) > buttonVoltageThreshold;
+  return getPinVoltage(button_pin) > BUTTON_VOLTAGE_THRESHOLD;
 }
 
 // Most recent times each of the buttons were pressed
-constexpr unsigned long doublePressTime_ms = 140;
 unsigned long lastPress_HomeButton = 0;
 unsigned long lastPress_LEDOnOffButton = 0;
 unsigned long lastPress_DecreaseButton = 0;
@@ -693,23 +677,23 @@ void handleButtonPresses() {
       // Update "last time pressed"
       // Call method that handles this button being pressed (in State management section)
 
-  if (isButtonPressed(HOME_BUTTON) && millis() - lastPress_HomeButton > doublePressTime_ms) {
+  if (isButtonPressed(HOME_BUTTON_PIN) && millis() - lastPress_HomeButton > BUTTON_DEBOUNCE_MS) {
     lastPress_HomeButton = millis();
     runHomeBtnPush();
   }
-  if (isButtonPressed(LED_ON_OFF_BUTTON) && millis() - lastPress_LEDOnOffButton > doublePressTime_ms) {
+  if (isButtonPressed(LED_ON_OFF_BUTTON_PIN) && millis() - lastPress_LEDOnOffButton > BUTTON_DEBOUNCE_MS) {
     lastPress_LEDOnOffButton = millis();
     runLEDOnOffBackBtnPush();
   }
-  if (isButtonPressed(DECREASE_BUTTON) && millis() - lastPress_DecreaseButton > doublePressTime_ms) {
+  if (isButtonPressed(DECREASE_BUTTON_PIN) && millis() - lastPress_DecreaseButton > BUTTON_DEBOUNCE_MS) {
     lastPress_DecreaseButton = millis();
     runDecreaseBtnPush();
   }
-  if (isButtonPressed(INCREASE_BUTTON) && millis() - lastPress_IncreaseButton > doublePressTime_ms) {
+  if (isButtonPressed(INCREASE_BUTTON_PIN) && millis() - lastPress_IncreaseButton > BUTTON_DEBOUNCE_MS) {
     lastPress_IncreaseButton = millis();
     runIncreaseBtnPush();
   }
-  if (isButtonPressed(MENU_ENTER_BUTTON) && millis() - lastPress_ModeButton > doublePressTime_ms) {
+  if (isButtonPressed(MENU_ENTER_BUTTON_PIN) && millis() - lastPress_ModeButton > BUTTON_DEBOUNCE_MS) {
     lastPress_ModeButton = millis();
     runMenuEnterBtnPush();
   }
@@ -720,7 +704,7 @@ void handleButtonPresses() {
 // MAIN SETUP AND LOOP
 
 void setup() {
-  Serial.begin(9600); // open serial communication
+  Serial.begin(SERIAL_BAUD_RATE); // open serial communication
   oledScreenSetup();
   rtcClockSetup();
   LEDSetup();
@@ -743,5 +727,5 @@ void loop() {
   //   Serial.println("ALM_ENABLE_SWITCH on");
   // }
 
-  delay(100);
+  delay(LOOP_DELAY_MS);
 }
