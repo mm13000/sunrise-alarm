@@ -1,0 +1,92 @@
+{
+  "uuid": "acc0b7a0f05ecf8e3ff02ae5df96ddff",
+  "path": "Offline/sunrise_alarm_pcb",
+  "name": "sunrise_alarm_pcb",
+  "content": "",
+  "created_at": "2026-10-03 11:15:29",
+  "updated_at": "2026-11-12 10:53:41",
+  "stick": "",
+  "documents": [
+    {
+      "uuid": "0c1714c45246f0285b3309e2a2f3cb0f",
+      "title": "main_schematic",
+      "description": "",
+      "docType": "1",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "c01348a7d4fd48b8aa5b9b8f3039fbff": 1,
+        "09193f91a9954eff9668b1c78bb6aa6a": 2,
+        "d578e17195f0431a9d018c7218616536": 5,
+        "d1967012734640e5b2f2cc1ea764740b": 5
+      },
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "ARDUINO",
+          1,
+          "ARDUINONANOV30_ARDUINO_NANO",
+          "ARDUINO_NANO1",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "Push Button",
+          5,
+          "",
+          "BACK/LED,DECREASE,HOME,INCREASE,MENU/ENTER",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "Barrel Jack",
+          2,
+          "",
+          "PW_IN,PW_TO_LED",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ],
+        [
+          "10k",
+          5,
+          "R_AXIAL-0.4",
+          "R1,R2,R3,R4,R5",
+          {
+            "Manufacturer Part": "",
+            "Manufacturer": "",
+            "Supplier": "",
+            "Supplier Part": ""
+          }
+        ]
+      ],
+      "updateTime": 1791075020,
+      "createTime": 1791040530,
+      "histories": [],
+      "created_at": "2026-10-03 11:15:30",
+      "updated_at": "2026-10-03 20:50:20"
+    }
+  ],
+  "sort": [],
+  "title": "sunrise_alarm_pcb",
+  "foldername": "sunrise_alarm_pcb",
+  "schfilename": "sunrise_alarm_pcb.json",
+  "schfilemtime": 1794498821192
+}

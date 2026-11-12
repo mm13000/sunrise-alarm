@@ -1,0 +1,15 @@
+# Arduino build artifacts
+*.hex
+*.elf
+*.bin
+build/
+
+# EasyEDA temporary & backup files
+hardware/offline_projects_backup/
+**/offline_projects_backup/
+*.tmp
+~$*
+
+# OS junk
+.DS_Store
+Thumbs.db
