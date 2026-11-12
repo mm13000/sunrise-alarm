@@ -8,6 +8,8 @@ My goal for this project is to implement a programmable light alarm, which gradu
 
 ## Notes on components
 
+All components will be hand-soldered, so they must be through-hole or at least on the larger side.
+
 | Component | Pre-PCB (current) | Post-PCB (planned) | Notes |
 |-----------|-------------------|--------------------|-------|
 | LED strip | Not completely sure | no change | A past one I bought: 150 LEDs total, 30 LEDs/m, 5m long, 150 Lumens, 3000K, 12V power supply (current one has 24V input) |
