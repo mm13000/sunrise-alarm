@@ -13,7 +13,7 @@ All components will be hand-soldered, so they must be through-hole or at least o
 | Component | Pre-PCB (current) | Post-PCB (planned) | Notes |
 |-----------|-------------------|--------------------|-------|
 | LED strip | Not completely sure | no change | A past one I bought: 150 LEDs total, 30 LEDs/m, 5m long, 150 Lumens, 3000K, 12V power supply (current one has 24V input) |
-| Microcontroller | Arduino Nano | no change |  |
+| Microcontroller | Arduino Nano w/ ATmega328P (*not* "old bootloader") | no change |  |
 | Real-Time Clock (RTC) | DS3231 w/ generic HW-084 board (LIR2032 battery) | [DS3231 w/ Adafruit 3013 board](https://www.adafruit.com/product/3013) (CR1220 battery) | Adafruit's board is significantly more compact |
 | Screen | generic 0.91" 128x32 OLED | [Adafruit 0.91" 128x32 OLED](https://www.adafruit.com/product/4440) | Both use SSD1306 driver, switching to Adafruit offers ... |
 | Buttons | Standard two-pin push buttons | no change |  |
@@ -40,11 +40,31 @@ Barrel jacks:
 
 ## Notes on wiring
 
+Arduino pins:
+
+| Pin | Functions | Notes |
+|-----|----------|-------|
+| 5V | Power input or output | Can be used to power the RTC and OLED |
+| VIN | Power input: 7-12V | Can be used to power the Arduino |
+| GND | Ground | Ground should be common to everything: RTC, OLED, LED power supply ground, MOSFET pull-down resistor, buttons, etc. |
+| TX1, RX0 | Serial RX/TX | Avoid use. Reserved for USB-to-Serial programming/debugging. |
+| D2 - D12 | • Digital I/O <br> • Pin change interrupts: `PCINT` | Note: one needs to be reserved for PWM |
+| D2, D3 | External hardware interrupts: `INT0`, `INT1` | Can be used for RTC wake interrupt `SQW` |
+| D3, D9, D10, or D11 | PWM output at 490.20 Hz | D3 and D11 use Timer 2. <br> D9 and D10 use Timer 1 (16-bit): best option for flicker-free high-frequency PWM. |
+| D5, D6 | PWM output at 976.56 Hz | Use Timer 0, shared with `millis()` and `delay()`. Known quirk that `analogWrite(pin, 0)` does not always produce true 0% duty cycle. |
+| D13 | Digital output | Tied to the Arduino's built-in LED + resistor to GND. Do not use for `INPUT_PULLUP` buttons; fine for status output. |
+| A0 - A7 | Analog input | A6 and A7 cannot be used for digital I/O (such as `INPUT_PULLUP` buttons) |
+| A0 - A5 | • Digital I/O <br> • Pin change interrupts: `PCINT` | Identical to D2-D12 for digital I/O and `PCINT`. |
+| A4 | I2C (Two-Wire communication): SDA | To RTC and OLED |
+| A5 | I2C (Two-Wire communication): SCL | To RTC and OLED |
+
+Currently, buttons use a pull-down resistor to GND so pin is normally LOW and goes HIGH when button is pressed. Next iteration I will switch this to use digital input pins (D2-D12 or A0-A5) with `INPUT_PULLUP` so that the pin is normally HIGH and goes LOW when button is pressed. This will eliminate the need for including a pull-down resistor on each button because these pins have built-in 20-50 $\text{k}\Omega$ pull-up resistors.
+
 Include a 10k pull-down resistor between Gate to Source/GND on the MOSFET to keep it firmly off while the Arduino Nano is booting and its pins are floating. Missing this could cause the LED strip to flash on at full brightness on power-up.
 
 Include a 220-330 Ohm resistor in series with Arduino PWM to Gate. This is because the MOSFET gate behaves like a capacitor and w/o a series resistor the PWM edges draw a sharp current spike from the Arduino pin.
 
-## Notes on PCB design
+## Notes on PCB layout and enclosure
 
 Using EasyEDA desktop version (projects offline) to design the PCB.
 
@@ -56,7 +76,9 @@ Place barrel jack on PCB with 1-2mm of overhang off side of PCB, possibly.
 Full firmware is implemented in `firmware.ino`.
 
 
-## Current project status
+## Status and next steps
+
+### Current state and recent accomplishments
 
 - Light alarm is functioning and has been functioning for over 2 years. RTC successfully maintains current time when power is disconnected/reconnected (using rechargeable coin cell battery). Alarm triggers at correct time and gradual brightening works.
 - Hardware is stable/reliable: 
@@ -65,7 +87,7 @@ Full firmware is implemented in `firmware.ino`.
     - Placed inside an incomplete and not fully enclosed 3D printed case 
 - Recently did a major overhaul of the firmware moving it to a "menu -> option selections" design which makes it a little more intuitive and also allows more easily adding new features in the future.
 
-## Current projects / next steps
+### Active development:
 
 Move the project from a soldered protoboard (somewhat bulky, two layers, has potential to break) to a slim and sturdy PCB housed in a 3D printed case:
 
@@ -77,8 +99,9 @@ Move the project from a soldered protoboard (somewhat bulky, two layers, has pot
 6. Solder PCB and test
 7. Mount in the 3D printed case
 
-Potential future improvements later on:
+### Potential improvements for later:
 
+- Change dimming/brightening curve to be exponential or logarigthmic instead of linear. The current linear curve feels too abrupt at the beginning and slow at the end.
 - Add a screen timeout to improve life of OLED screen
 - Improve the button handling in the firmware so that it doesn't jump to "continuous" mode too fast on long-press, but once it does it increments/decrements more quickly. Could also disable "continuous" mode in a lot of scenarios which might be nice (such as turning the screen off/on).
 - Figure out a way to reliably power the Arduino with the same power supply as the LED strip. Previously used a small power converter that was adjustable on some range (wish I could remember the model) but it burned out after some time.
