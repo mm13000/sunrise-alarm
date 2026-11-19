@@ -1,149 +1,94 @@
 # Project: Arduino Sunrise Alarm Clock
 
-Source of truth for design decisions and implementation details, as well as notes to self for the design process.
+Source of truth for design decisions, component selections, and implementation checklists.
 
-## Overview
+Goal for this project is to implement a programmable light alarm, which gradually brightens an LED strip over a user-defined time. Gradual brightening is accomplished using a PWM signal with a slowly increasing duty cycle. The user should be able to set the clock time, alarm time, and alarm duration.
 
-My goal for this project is to implement a programmable light alarm, which gradually brightens an LED strip over a user-defined time. Gradual brightening can be accomplished using a PWM signal with slowly increasing duty cycle. The user should be able to set the clock time, alarm time, and alarm duration. 
+## Status
 
-## Notes on component choices
+### Oct 2026
+- **Functional Prototype:** Light alarm is functioning and has been running reliably for over 2 years. The RTC successfully maintains current time when power is disconnected/reconnected (using its coin cell battery). The alarm triggers at the correct time and gradual brightening works.
+- **Current Hardware:**
+  - Soldered onto two protoboards which are connected vertically with screws and standoffs.
+  - Barrel jacks are hot-glued in addition to soldering because they became wiggly over time.
+  - Housed inside 3D printed case (incomplete- not fully enclosed).
+- **Firmware:** Recently did a major overhaul of `firmware.ino`, moving to a `menu -> options` UI design that is more intuitive and makes it easier to add new features/options.
 
-All components will be hand-soldered, so they must be through-hole or at least on the larger side.
+## Next steps
+Move the project from a two-layer soldered protoboard (bulky, fragile) to a PCB (slimmer and sturdier) housed in a more refined 3D-printed case. Also move to Altium Designer (previously tried using EasyEDA desktop in projects offline mode).
 
-| Component | Pre-PCB (current) | Post-PCB (planned) | Notes |
-|-----------|-------------------|--------------------|-------|
-| LED strip | Not completely sure | no change | A past one I bought: 150 LEDs total, 30 LEDs/m, 5m long, 150 Lumens, 3000K, 12V power supply (current one has 24V input) |
-| Microcontroller | Arduino Nano w/ ATmega328P (*not* "old bootloader") | no change |  |
-| Real-Time Clock (RTC) | DS3231 w/ generic HW-084 board (LIR2032 battery) | [DS3231 w/ Adafruit 3013 board](https://www.adafruit.com/product/3013) (CR1220 battery) | Adafruit's board is significantly more compact |
-| Screen | generic 0.91" 128x32 OLED | [Adafruit 0.91" 128x32 OLED](https://www.adafruit.com/product/4440) | Both use SSD1306 driver, switching to Adafruit offers ... |
-| Buttons | Standard two-pin push buttons | no change |  |
-| MOSFET (for PWM control) | Probably: IRLB8748 (International Rectifier, now Infineon), 30V 78-92A | RFP30N06LE (Fairchild Semiconductor, now ON Semiconductor) 60V 30A | Already have both of these in my kit. New one supports higher voltage |
-| Barrel jacks | 2.1mm ID 5.5mm OD | no change | This is the standard for hobbyist low-voltage barrel connectors and matches the power supply I have. |
-| LED strip power supply | 24V 1.5A output | no change | Entirely dependent on the LED strip being used |
-| Arduino power supply | 5V USB-C | no change |  |
+- [ ] Set up local Altium Designer project (`Sunrise_Alarm.PrjPcb`) and custom library files (`.SchLib` and `.PcbLib`).
+- [ ] Gather or create schematic symbols, PCB footprints, and 3D `.STEP` models for each component.
+- [ ] Create the circuit wiring schematic (`.SchDoc`).
+- [ ] Design the PCB layout (`.PcbDoc`). Goal is a compact board with an intuitive button layout and solid mechanical mounting for the barrel jacks, as well as mounting holes or mechanism for the 3D-printed case.
+- [ ] Export the PCB 3D `.STEP` model and design the 3D-printed enclosure around it.
+- [ ] Order PCB, solder components, test, etc.
 
-
-LED strip: 
-- Generally they are 12-24V input so I want to support that range. 
-- Currently I only plan to support LED strips that use a barrel jack input. Are there others? Probably ones that take USB input, but I don't know if they would support PWM-style dimming. Generally trying to avoid programmable strips that have their own controller/remote, color changing, etc. unless I do more research on them: I worry that I won't be able to do simple PWM on/off/dimming control.
-
-Arduino power supply: 
-- Currently requiring separate 5V USB-C power. Would be nice to remove this (see note at bottom).
-
-Screen: 
-- Would be cool to have a larger screen such as [Adafruit 0.96" 128x64](https://www.adafruit.com/product/326). Would require a larger case, which isn't a big deal. Bigger potential problem is the memory buffer required for a 128x64 screen is 1024 bytes, which is half of the total memory available on the Arduino Nano (2048 bytes).
-
-Barrel jacks: 
-- If at any point buying new barrel jacks, ensure 11mm inner depth. That is the length of the plugs I have for the LED strip and power supply, but apparently some barrel jacks are only 9-9.5mm deep.
-- Verified inner diameter (ID) by inserting a 5/64" (1.98mm) drill bit, which fits, then trying a 3/32" (2.38mm) bit, which did not fit: rules out the common 2.5mm ID.
-- If I switch to a 12V 3A LED strip, should probably upgrade barrel jacks to "high-current" since standard barrel jacks are limited to 2-2.5A.
-
-## Notes on wiring
-
-Arduino pins:
-
-| Pin | Functions | Notes |
-|-----|----------|-------|
-| 5V | Power input or output | Can be used to power the RTC and OLED |
-| VIN | Power input: 7-12V | Can be used to power the Arduino |
-| GND | Ground | Ground should be common to everything: RTC, OLED, LED power supply ground, MOSFET pull-down resistor, buttons, etc. |
-| TX1, RX0 | Serial RX/TX | Avoid use. Reserved for USB-to-Serial programming/debugging. |
-| D2 - D12 | • Digital I/O <br> • Pin change interrupts: `PCINT` | Note: one needs to be reserved for PWM |
-| D2, D3 | External hardware interrupts: `INT0`, `INT1` | Can be used for RTC wake interrupt `SQW` |
-| D3, D9, D10, or D11 | PWM output at 490.20 Hz | D3 and D11 use Timer 2. <br> D9 and D10 use Timer 1 (16-bit): best option for flicker-free high-frequency PWM. |
-| D5, D6 | PWM output at 976.56 Hz | Use Timer 0, shared with `millis()` and `delay()`. Known quirk that `analogWrite(pin, 0)` does not always produce true 0% duty cycle. |
-| D13 | Digital output | Tied to the Arduino's built-in LED + resistor to GND. Do not use for `INPUT_PULLUP` buttons; fine for status output. |
-| A0 - A7 | Analog input | A6 and A7 cannot be used for digital I/O (such as `INPUT_PULLUP` buttons) |
-| A0 - A5 | • Digital I/O <br> • Pin change interrupts: `PCINT` | Identical to D2-D12 for digital I/O and `PCINT`. |
-| A4 | I2C (Two-Wire communication): SDA | To RTC and OLED |
-| A5 | I2C (Two-Wire communication): SCL | To RTC and OLED |
-
-Currently, buttons use a pull-down resistor to GND so pin is normally LOW and goes HIGH when button is pressed. Next iteration I will switch this to use digital input pins (D2-D12 or A0-A5) with `INPUT_PULLUP` so that the pin is normally HIGH and goes LOW when button is pressed. This will eliminate the need for including a pull-down resistor on each button because these pins have built-in 20-50 $\text{k}\Omega$ pull-up resistors.
-
-Include a 10k pull-down resistor between Gate to Source/GND on the MOSFET to keep it firmly off while the Arduino Nano is booting and its pins are floating. Missing this could cause the LED strip to flash on at full brightness on power-up.
-
-Include a 220-330 Ohm resistor in series with Arduino PWM to Gate. This is because the MOSFET gate behaves like a capacitor and w/o a series resistor the PWM edges draw a sharp current spike from the Arduino pin.
+## Things I still need to look into / decide on:
+- **Buttons:** Should I use the same two-pin push buttons, or switch to a different tactile button type for better feel/look? Or should I make the 3D case have "button covers" that move to push the buttons (though this could be easily breakable)?
+- **Power Supply:** Should I power the Arduino Nano from the 12–24V LED strip power supply so a separate 5V USB-C cable isn't required? *(Previously tried a small adjustable buck converter module, but it burned out over time. Would need a reliable, well-rated step-down regulator if revisited.)*
+- 
 
 
-## Notes on PCB design
+## Ideas for future improvements
 
-Previously: Using EasyEDA desktop version (projects offline) to design the PCB.
+### Firmware:
+- **Exponential/Logarithmic Dimming Curve:** Change the brightening curve from linear to exponential or logarithmic. The current linear curve feels too abrupt at the very beginning and too slow near the end.
+- **OLED Screen Timeout:** Add an automatic screen timeout to prevent OLED burn-in and extend display lifespan.
+- **Refined Button Long-Press Acceleration:** Adjust button handling so it waits slightly longer before entering "continuous" increment/decrement mode on a long press, and increments faster once engaged. Disable continuous mode on binary toggles (e.g., turning the screen on/off).
 
-Currently: Switching to use Altium Designer for PCB design.
-
-### Getting pre-made STEP, footprint and symbol files for components
-
-> Note to self: I should use STEP files, not STL files, for 3D models. STL files are good for 3D printing because they simplify parts into a faceted mesh, stripping away exact geometry. STEP files maintain exact parametric geometry.
-
-Some useful sources where I could get pre-made STEP files, footprints, and symbols:
-
-**Suppliers** (often a good source for ground truth):
-
-| Source | What it has | Good for: | Notes |
-|--------|-------------|-----------|-------|
-| [DigiKey](https://www.digikey.com/) | Discrete components |  | Often has 3D models by linking to [SnapMagic](https://www.snapeda.com/) or [UltraLibrarian](https://www.ultralibrarian.com/) |
-| [Mouser](https://www.mouser.com/) | Discrete components |  | Often has 3D models by linking to [SamacSys](https://supplyframe.com/samacsys) |
-| [Adafruit CAD Parts GitHub](https://github.com/adafruit/Adafruit_CAD_Parts) | 3D models only | Adafruit breakout boards/components |  |
-| [McMaster-Carr](https://www.mcmaster.com/) | 3D models only | Mechanical parts like screws, standoffs, nuts, washers, etc. | Can download STEP files for free. |
-
-**Manufacturers**:
-- Same Sky / CUI devices
-- Molex
-- TE
-- Wurth
-
-**Aggregators and community sources**:
-
-| Source | What it has | Good for: | Notes |
-|--------|-------------|-----------|-------|
-| [OctoPart](https://octopart.com/) (owned by Altium) | Datasheets, pricing, stock, some CAD | Standard discrete parts: resistors, buttons, barrel jacks, MOSFET | Search engine for electronic parts that aggregates accross suppliers (DigiKey, Mouser, Newark). This powers Altium's built-in "Manufacturer Part Search" feature. |
-| "Manufacturer Part Search" in Altium Designer | Same as OctoPart | Exact manufacturer discrete parts (MOSFET, buttons, barrel jacks) | Uses OctoPart under the hood. Green "chip" icon in Altium indicates availability of symbol and footprint (and usually 3D model). Can directly download to local library (don't use "Acquire"). |
-| [SnapMagic](https://www.snapeda.com/) (formerly SnapEDA) | Footprints/symbols, some 3D models | Mixture of manufacturer-verified, community-sourced, and auto-generated STEP files, footprints, and symbols. Good when manufacturer parts aren't available from OctoPart/Altium. | Look for "Verified" badge. Largest community- and vendor-supported ECAD library. Mixes manufacturer-verified models with community/automated ones, so use caution. |
-| [UltraLibrarian](https://www.ultralibrarian.com/) |  | Integrated into DigiKey. Clean, direct Altium imports. | According to Gemini, UltraLibrarian often has clean IPC-compliant footprints, especially for vendors like TI or Analog Devices. |
-| [SamacSys](https://supplyframe.com/samacsys) |  | Integrated into Mouser. | Pushes "Library Loader" background utility: avoid this to get a raw file. |
-| [GrabCAD](https://grabcad.com/) | 3D models only | Finding 3D models of complete assemblies like Arduino Nano, OLED screens, power supplies... | Anyone can upload, check carefully. |
-
-> Note to self: Downloading from SnapMagic would give me a standalone `.SchLib`/`.PcbLib` file for each component, or a script to generate one. Rather than adding each of these into my project, open the downloaded file in Altium, copy the component/footprint from its library panel, and paste it into my central `.SchLib` and `.PcbLib` files, then delete the downloaded files.
-
-**Barrel jacks**: Be careful that the PCB has slotted holes for the barrel jack pins, not regular round holes. See if I can find a datasheet for the barrel jacks I have and see recommended hole sizes, or measure with caliper and research this. (Altium supports "slot" hole types.)
-
-**Footprints**: Even from verified sites, check the footprints against the datasheets. Be careful about pin swaps, especially for the MOSFET.
-
-### Other
-Place barrel jack on PCB with 1-2mm of overhang off side of PCB, possibly. 
+### Hardware:
+- **Single Power Supply (Buck Converter):** Power the Arduino Nano from the 12–24V LED strip power supply so a separate 5V USB-C cable isn't required. *(Previously tried a small adjustable buck converter module, but it burned out over time—will need a reliable, well-rated step-down regulator if revisited.)*
 
 
-## Notes on firmware
+---
 
-Full firmware is implemented in `firmware.ino`.
+## Component choices
 
+All components will be hand-soldered, so they must be through-hole or larger footprints/breakout modules.
 
-## Status and next steps
+| Component | Pre-PCB (Current Prototype) | Post-PCB (Planned) | Notes |
+|:---|:---|:---|:---|
+| **LED Strip** | 24V input LED strip | No change | For reference, one past strip I bought (not the current one I have): 150 LEDs total, 30 LEDs/m, 5m long, 150 Lumens, 3000K, 12V power supply (the current strip uses 24V input). |
+| **Microcontroller** | Arduino Nano w/ ATmega328P (*not* "old bootloader") | No change | |
+| **Real-Time Clock (RTC)** | DS3231 w/ generic HW-084 board (LIR2032 battery) | [DS3231 w/ Adafruit 3013 board](https://www.adafruit.com/product/3013) (CR1220 battery) | Adafruit's board is significantly more compact than generic version. Yay! |
+| **Screen** | Generic 0.91" 128x32 OLED | [Adafruit 0.91" 128x32 OLED (4440)](https://www.adafruit.com/product/4440) | Both use SSD1306 driver; switching to Adafruit gives official 3D CAD models. |
+| **Buttons** | Standard two-pin push buttons | No change |  |
+| **MOSFET (PWM control)** | Likely IRLB8748 (by Infineon), 30V 78–92A | RFP30N06LE (by ON Semiconductor), 60V 30A | Already have both in kit; but the RFP30N06LE supports higher voltage (`docs/datasheets/RFP30N06LE.pdf`). |
+| **Barrel Jacks** | 2.1mm ID, 5.5mm OD | No change | Standard hobbyist low-voltage barrel connector; matches my current power supply and LED strip plugs. |
+| **LED Power Supply** | 24V 1.5A output | No change | Of course this is always dependent on the LED strip being used. |
+| **Arduino Power Supply** | 5V USB-C | No change | Currently separate from LED power supply (see section above on ideas for future improvements). |
 
-### Current state and recent accomplishments
+### Component Design Notes & Constraints
+- **LED Strip:**
+  - Generally 12–24V input, so the PCB should safely support that voltage/current range.
+  - Currently only supporting non-addressable LED strips with a barrel jack connection that accept simple PWM dimming. Avoiding programmable/remote-controlled RGB strips for now until further research.
+- **Barrel Jacks:**
+  - **Depth:** If buying new barrel jacks, ensure **11mm inner depth** (matches existing plugs; some jacks are only 9–9.5mm deep).
+  - **Diameter Verification:** To verify my barrel jack ID/OD, I used a 5/64" (1.98mm) drill bit, which fits, while a 3/32" (2.38mm) drill bit did not fit (ruling out 2.5mm ID).
+  - **Current Rating:** Standard barrel jacks are rated around 2–2.5A. If upgrading to a 12V 3A LED strip later, upgrade to high-current barrel jacks.
+- **Screen Upgrade Trade-off:**
+  - I considered upgrading to a larger [Adafruit 0.96" 128x64 OLED](https://www.adafruit.com/product/326). Enclosure size isn't an issue, but a 128x64 display requires a 1024-byte memory buffer, which is half of the Arduino Nano's 2048 bytes of SRAM. Sticking with 128x32 for now. If I want to upgrade in the future, probably need to upgrade the microcontroller. Worth looking into probably (or at least interesting/fun to research).
 
-- Light alarm is functioning and has been functioning for over 2 years. RTC successfully maintains current time when power is disconnected/reconnected (using rechargeable coin cell battery). Alarm triggers at correct time and gradual brightening works.
-- Hardware is stable/reliable: 
-    - Soldered on two protoboards connected vertically with screws and standoffs
-    - Barrel jacks are hot-glued in addition to soldering because they were wiggly after a while
-    - Placed inside an incomplete and not fully enclosed 3D printed case 
-- Recently did a major overhaul of the firmware moving it to a "menu -> option selections" design which makes it a little more intuitive and also allows more easily adding new features in the future.
+---
 
-### Active development:
+## Must-have checklist for schematic & PCB layout
 
-Move the project from a soldered protoboard (somewhat bulky, two layers, has potential to break) to a slim and sturdy PCB housed in a 3D printed case:
+### Schematic & wiring
+- **Common Ground:** Connect `GND` across all subsystems (Arduino, RTC, OLED, LED power supply ground, MOSFET source/pull-down resistor, and buttons).
+- **MOSFET Gate Pull-Down Resistor ($10\text{ k}\Omega$):** Place a $10\text{ k}\Omega$ resistor between MOSFET Gate and Source/GND to keep the MOSFET firmly off while the Arduino Nano boots and its pins float (prevents the LED strip from flashing at full brightness on power-up).
+- **MOSFET Gate Series Resistor ($220\text{--}330\ \Omega$):** Place a $220\text{--}330\ \Omega$ resistor in series between the Arduino PWM output pin and the MOSFET Gate to limit sharp capacitive current spikes on PWM edges.
+- **Buttons via `INPUT_PULLUP`:** Wire pushbuttons between digital input pins (`D2–D12` or `A0–A5`, excluding `D13`, `A6`, `A7`) and `GND`. The next firmware/hardware iteration will use the ATmega328P's internal $20\text{--}50\text{ k}\Omega$ pull-up resistors (`INPUT_PULLUP`, pin normally `HIGH`, goes `LOW` when pressed). This eliminates external pull-down resistors on each button!
+- **PWM Pin Selection:** Route the MOSFET gate drive to `D9` or `D10` (16-bit Timer 1) if possible for flicker-free high-frequency PWM, or `D3`/`D11` (Timer 2). Avoid `D5`/`D6` (Timer 0 quirk where `analogWrite(pin, 0)` may not produce true 0% duty cycle).
+- **I2C Bus (`A4` / `A5`):** Route `A4` (`SDA`) and `A5` (`SCL`) to both the DS3231 RTC and SSD1306 OLED.
 
-1. Create EasyEDA components in my component library for each piece of light alarm.
-2. Create EasyEDA wiring schematic using the components
-3. Design and PCB: wiring based on EasyEDA schematic; try to make it compact and make button layout intuitive to use
-4. Create 3D model of the case based on PCB dimensions and mounting holes
-5. Order PCB
-6. Solder PCB and test
-7. Mount in the 3D printed case
+### Footprint & PCB layout
+- [ ] **Verify Pinouts Against Datasheets:** Double-check all downloaded symbols/footprints against datasheets—especially **Gate / Drain / Source** pin numbers on the `RFP30N06LE` MOSFET.
+- [ ] **Slotted Holes for Barrel Jacks:** Ensure the barrel jack footprint uses **slotted holes** (`Slot` hole type in Altium) for its flat blade pins rather than round holes. Verify the slot dimensions against the datasheet or caliper measurements.
+- [ ] **Barrel Jack Overhang:** Consider placing the barrel jacks along the board edge with **1–2mm of overhang** off the side of the PCB for clean mating through the thickness of the 3D printed enclosure. Consider that this might cause difficulties with inserting the soldered/assembled PCB into the enclosure.
 
-### Potential improvements for later:
+---
 
-- Change dimming/brightening curve to be exponential or logarigthmic instead of linear. The current linear curve feels too abrupt at the beginning and slow at the end.
-- Add a screen timeout to improve life of OLED screen
-- Improve the button handling in the firmware so that it doesn't jump to "continuous" mode too fast on long-press, but once it does it increments/decrements more quickly. Could also disable "continuous" mode in a lot of scenarios which might be nice (such as turning the screen off/on).
-- Figure out a way to reliably power the Arduino with the same power supply as the LED strip. Previously used a small power converter that was adjustable on some range (wish I could remember the model) but it burned out after some time.
+## Firmware
+
+Full firmware is implemented in `firmware/firmware.ino` and `firmware/config.h`.
