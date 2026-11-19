@@ -10,6 +10,21 @@ hardware/offline_projects_backup/
 *.tmp
 ~$*
 
+# Altium Designer
+*.~*
+*.lck
+*.PrjPcbStructure
+History/
+__Previews/
+*.LOG
+*.log
+*.htm
+*.html
+*.DRC
+*. ERC
+*.rep
+Report*
+
 # OS junk
 .DS_Store
 Thumbs.db
