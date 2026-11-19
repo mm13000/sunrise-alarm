@@ -6,7 +6,7 @@ Source of truth for design decisions and implementation details, as well as note
 
 My goal for this project is to implement a programmable light alarm, which gradually brightens an LED strip over a user-defined time. Gradual brightening can be accomplished using a PWM signal with slowly increasing duty cycle. The user should be able to set the clock time, alarm time, and alarm duration. 
 
-## Notes on components
+## Notes on component choices
 
 All components will be hand-soldered, so they must be through-hole or at least on the larger side.
 
@@ -64,10 +64,52 @@ Include a 10k pull-down resistor between Gate to Source/GND on the MOSFET to kee
 
 Include a 220-330 Ohm resistor in series with Arduino PWM to Gate. This is because the MOSFET gate behaves like a capacitor and w/o a series resistor the PWM edges draw a sharp current spike from the Arduino pin.
 
-## Notes on PCB layout and enclosure
 
-Using EasyEDA desktop version (projects offline) to design the PCB.
+## Notes on PCB design
 
+Previously: Using EasyEDA desktop version (projects offline) to design the PCB.
+
+Currently: Switching to use Altium Designer for PCB design.
+
+### Getting pre-made STEP, footprint and symbol files for components
+
+> Note to self: I should use STEP files, not STL files, for 3D models. STL files are good for 3D printing because they simplify parts into a faceted mesh, stripping away exact geometry. STEP files maintain exact parametric geometry.
+
+Some useful sources where I could get pre-made STEP files, footprints, and symbols:
+
+**Suppliers** (often a good source for ground truth):
+
+| Source | What it has | Good for: | Notes |
+|--------|-------------|-----------|-------|
+| [DigiKey](https://www.digikey.com/) | Discrete components |  | Often has 3D models by linking to [SnapMagic](https://www.snapeda.com/) or [UltraLibrarian](https://www.ultralibrarian.com/) |
+| [Mouser](https://www.mouser.com/) | Discrete components |  | Often has 3D models by linking to [SamacSys](https://supplyframe.com/samacsys) |
+| [Adafruit CAD Parts GitHub](https://github.com/adafruit/Adafruit_CAD_Parts) | 3D models only | Adafruit breakout boards/components |  |
+| [McMaster-Carr](https://www.mcmaster.com/) | 3D models only | Mechanical parts like screws, standoffs, nuts, washers, etc. | Can download STEP files for free. |
+
+**Manufacturers**:
+- Same Sky / CUI devices
+- Molex
+- TE
+- Wurth
+
+**Aggregators and community sources**:
+
+| Source | What it has | Good for: | Notes |
+|--------|-------------|-----------|-------|
+| [OctoPart](https://octopart.com/) (owned by Altium) | Datasheets, pricing, stock, some CAD | Standard discrete parts: resistors, buttons, barrel jacks, MOSFET | Search engine for electronic parts that aggregates accross suppliers (DigiKey, Mouser, Newark). This powers Altium's built-in "Manufacturer Part Search" feature. |
+| "Manufacturer Part Search" in Altium Designer | Same as OctoPart | Exact manufacturer discrete parts (MOSFET, buttons, barrel jacks) | Uses OctoPart under the hood. Green "chip" icon in Altium indicates availability of symbol and footprint (and usually 3D model). Can directly download to local library (don't use "Acquire"). |
+| [SnapMagic](https://www.snapeda.com/) (formerly SnapEDA) | Footprints/symbols, some 3D models | Mixture of manufacturer-verified, community-sourced, and auto-generated STEP files, footprints, and symbols. Good when manufacturer parts aren't available from OctoPart/Altium. | Look for "Verified" badge. Largest community- and vendor-supported ECAD library. Mixes manufacturer-verified models with community/automated ones, so use caution. |
+| [UltraLibrarian](https://www.ultralibrarian.com/) |  | Integrated into DigiKey. Clean, direct Altium imports. | According to Gemini, UltraLibrarian often has clean IPC-compliant footprints, especially for vendors like TI or Analog Devices. |
+| [SamacSys](https://supplyframe.com/samacsys) |  | Integrated into Mouser. | Pushes "Library Loader" background utility: avoid this to get a raw file. |
+| [GrabCAD](https://grabcad.com/) | 3D models only | Finding 3D models of complete assemblies like Arduino Nano, OLED screens, power supplies... | Anyone can upload, check carefully. |
+
+> Note to self: Downloading from SnapMagic would give me a standalone `.SchLib`/`.PcbLib` file for each component, or a script to generate one. Rather than adding each of these into my project, open the downloaded file in Altium, copy the component/footprint from its library panel, and paste it into my central `.SchLib` and `.PcbLib` files, then delete the downloaded files.
+
+**Barrel jacks**: Be careful that the PCB has slotted holes for the barrel jack pins, not regular round holes. See if I can find a datasheet for the barrel jacks I have and see recommended hole sizes, or measure with caliper and research this. (Altium supports "slot" hole types.)
+
+**Footprints**: Even from verified sites, check the footprints against the datasheets. Be careful about pin swaps, especially for the MOSFET.
+
+### Other
 Place barrel jack on PCB with 1-2mm of overhang off side of PCB, possibly. 
 
 
