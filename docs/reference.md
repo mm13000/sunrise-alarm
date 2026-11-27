@@ -8,10 +8,10 @@
 
 | Source | What It Has | Good For | Notes |
 |:---|:---|:---|:---|
-| [DigiKey](https://www.digikey.com/) | Discrete components, datasheets, CAD links | Finding exact part numbers and specs | Product pages often link to [SnapMagic](https://www.snapeda.com/) or [Ultra Librarian](https://www.ultralibrarian.com/) under "EDA / CAD Models". |
-| [Mouser](https://www.mouser.com/) | Discrete components, datasheets, CAD links | Finding exact part numbers and specs | Product pages often link directly to [SamacSys](https://supplyframe.com/samacsys) for ECAD models. |
-| [Adafruit CAD Parts GitHub](https://github.com/adafruit/Adafruit_CAD_Parts) | Official 3D `.STEP` & `.f3d` models | Adafruit breakout boards & sensors | Indexed by Adafruit's 4-digit product ID (e.g., `3013` for DS3231 RTC, `4440` for 0.91" OLED). Press `T` in GitHub to search by ID. |
-| [McMaster-Carr](https://www.mcmaster.com/) | Dimensionally exact 3D `.STEP` models | Screws, standoffs, nuts, washers, heat-set inserts | Free instant `.STEP` downloads under Product Detail -> CAD (no login required). |
+| [DigiKey](https://www.digikey.com/) | Discrete components, datasheets, CAD links | Finding exact part numbers and specs | Product pages often link to [SnapMagic](https://www.snapeda.com/) or [Ultra Librarian](https://www.ultralibrarian.com/) |
+| [Mouser](https://www.mouser.com/) | Discrete components, datasheets, CAD links | Finding exact part numbers and specs | Product pages often link directly to [SamacSys](https://supplyframe.com/samacsys) |
+| [Adafruit CAD Parts GitHub](https://github.com/adafruit/Adafruit_CAD_Parts) | Official 3D `.STEP` & `.f3d` models | Adafruit breakout boards & sensors | |
+| [McMaster-Carr](https://www.mcmaster.com/) | Dimensionally exact 3D `.STEP` models | Screws, standoffs, nuts, washers, heat-set inserts | `.STEP` downloads under Product Detail -> CAD |
 | **Manufacturer Sites** (Same Sky/CUI, Molex, TE, Würth) | Official `.STEP` models & mechanical drawings | Electromechanical parts (barrel jacks, switches, connectors) | Best place to find exact PCB hole/slot cutout drawings alongside official 3D STEP files. |
 
 ### Aggregators & ECAD Libraries
@@ -19,11 +19,11 @@
 | Source | What It Has | Good For | Notes |
 |:---|:---|:---|:---|
 | [Octopart](https://octopart.com/) (owned by Altium) | Datasheets, pricing, stock, some CAD links | Standard discrete parts (resistors, buttons, barrel jacks, MOSFETs) | Search engine that aggregates across suppliers (DigiKey, Mouser, Newark). Powers Altium's built-in "Manufacturer Part Search". |
-| **"Manufacturer Part Search"** (inside Altium Designer) | Symbols, footprints, and 3D models | Exact manufacturer discrete parts | Uses Octopart under the hood. A **green chip icon** indicates a symbol and footprint (and usually 3D model) are available. Use **Download** (to add to local library), not "Acquire" (cloud). |
+| **"Manufacturer Part Search"** (inside Altium Designer) | Symbols, footprints, 3D models | Exact manufacturer discrete parts | Uses Octopart under the hood. A **green chip icon** indicates a symbol and footprint (and usually 3D model) are available. Use **Download** (to add to local library), not "Acquire" (cloud). |
 | [SnapMagic](https://www.snapeda.com/) (formerly SnapEDA) | Symbols, footprints, some 3D models | Breakout modules, ICs, and parts missing from Altium MPS | Largest vendor- and community-supported ECAD library. Mixes manufacturer-verified models with community/automated ones—look for the **"Verified"** badge and check dimensions. |
-| [Ultra Librarian](https://www.ultralibrarian.com/) | Symbols, footprints, 3D models | TI/Analog Devices ICs, DigiKey-linked parts | Heavily integrated into DigiKey. Tends to provide clean, IPC-compliant footprints with direct Altium exports. |
-| [SamacSys](https://supplyframe.com/samacsys) | Symbols, footprints, 3D models | Mouser-linked parts | Pushes its "Library Loader" background utility; skip the utility and download the raw files directly when possible. |
-| [GrabCAD](https://grabcad.com/) | 3D `.STEP` / CAD files only | Complete assemblies (Arduino Nano, OLED modules, power supplies) | Community-uploaded mechanical models. Anyone can upload, so always verify pin pitch and dimensions against the physical part. |
+| [Ultra Librarian](https://www.ultralibrarian.com/) | Symbols, footprints, 3D models | TI/Analog Devices ICs, DigiKey-linked parts | Integrated into DigiKey. Tends to provide clean, IPC-compliant footprints with direct Altium exports. |
+| [SamacSys](https://supplyframe.com/samacsys) | Symbols, footprints, 3D models | Mouser-linked parts | Pushes its "Library Loader" background utility. Would need to skip the utility and download the raw files directly. |
+| [GrabCAD](https://grabcad.com/) | 3D `.STEP` / CAD files only | Complete assemblies (Arduino Nano, OLED modules, power supplies) | Community-uploaded mechanical models. Anyone can upload, so verify dimensions. |
 
 
 ## Altium Designer workflow

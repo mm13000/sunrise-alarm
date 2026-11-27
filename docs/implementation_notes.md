@@ -13,16 +13,17 @@ Goal for this project is to implement a programmable light alarm, which graduall
   - Barrel jacks are hot-glued in addition to soldering because they became wiggly over time.
   - Housed inside 3D printed case (incomplete- not fully enclosed).
 - **Firmware:** Recently did a major overhaul of `firmware.ino`, moving to a `menu -> options` UI design that is more intuitive and makes it easier to add new features/options.
+- **Documentation:** Added this documentation file to track design decisions and progress. Also added `docs/reference.md` for keeping general notes as I learn more about Arduino, various components, etc.
 
 ## Next steps
 Move the project from a two-layer soldered protoboard (bulky, fragile) to a PCB (slimmer and sturdier) housed in a more refined 3D-printed case. Also move to Altium Designer (previously tried using EasyEDA desktop in projects offline mode).
 
-- [ ] Set up local Altium Designer project (`Sunrise_Alarm.PrjPcb`) and custom library files (`.SchLib` and `.PcbLib`).
-- [ ] Gather or create schematic symbols, PCB footprints, and 3D `.STEP` models for each component.
-- [ ] Create the circuit wiring schematic (`.SchDoc`).
-- [ ] Design the PCB layout (`.PcbDoc`). Goal is a compact board with an intuitive button layout and solid mechanical mounting for the barrel jacks, as well as mounting holes or mechanism for the 3D-printed case.
-- [ ] Export the PCB 3D `.STEP` model and design the 3D-printed enclosure around it.
-- [ ] Order PCB, solder components, test, etc.
+- Set up local Altium Designer project (`Sunrise_Alarm.PrjPcb`) and custom library files (`.SchLib` and `.PcbLib`).
+- Gather or create schematic symbols, PCB footprints, and 3D `.STEP` models for each component.
+- Create the circuit wiring schematic (`.SchDoc`).
+- Design the PCB layout (`.PcbDoc`). Goal is a compact board with an intuitive button layout and solid mechanical mounting for the barrel jacks, as well as mounting holes or mechanism for the 3D-printed case.
+- Export the PCB 3D `.STEP` model and design the 3D-printed enclosure around it.
+- Order PCB, solder components, test, etc.
 
 ## Things I still need to look into / decide on:
 - **Buttons:** Should I use the same two-pin push buttons, or switch to a different tactile button type for better feel/look? Or should I make the 3D case have "button covers" that move to push the buttons (though this could be easily breakable)?
@@ -43,11 +44,11 @@ Move the project from a two-layer soldered protoboard (bulky, fragile) to a PCB 
 
 ---
 
-## Component choices
+## Components
 
 All components will be hand-soldered, so they must be through-hole or larger footprints/breakout modules.
 
-| Component | Pre-PCB (Current Prototype) | Post-PCB (Planned) | Notes |
+| Component | Protoboard (current prototype) | PCB (planned) | Notes |
 |:---|:---|:---|:---|
 | **LED Strip** | 24V input LED strip | No change | For reference, one past strip I bought (not the current one I have): 150 LEDs total, 30 LEDs/m, 5m long, 150 Lumens, 3000K, 12V power supply (the current strip uses 24V input). |
 | **Microcontroller** | Arduino Nano w/ ATmega328P (*not* "old bootloader") | No change | |
@@ -58,6 +59,8 @@ All components will be hand-soldered, so they must be through-hole or larger foo
 | **Barrel Jacks** | 2.1mm ID, 5.5mm OD | No change | Standard hobbyist low-voltage barrel connector; matches my current power supply and LED strip plugs. |
 | **LED Power Supply** | 24V 1.5A output | No change | Of course this is always dependent on the LED strip being used. |
 | **Arduino Power Supply** | 5V USB-C | No change | Currently separate from LED power supply (see section above on ideas for future improvements). |
+| **Standoffs** | none | 11mm nylon M2 standoffs | Also use nylon screws or at least nylon washers. McMaster-Carr standoffs: [McMaster standoff](https://www.mcmaster.com/92319a255/) / [Digikey standoff](https://www.digikey.com/en/products/detail/raf-electronic-hardware/2056-256-N/7681362) / [McMaster screw 100 pack](https://www.mcmaster.com/94735A706-93135A012/) |
+| **Female header sockets** | not sure | 8.5mm length plastic body | Combined with standard 2.54mm plastic body of male spacer pins this makes ~11mm total standoff distance of PCB to breakout boards. [Digikey search](https://www.digikey.com/en/products/filter/headers-receptacles-female-sockets/315?s=N4IgjCBcoEwBxVAYygMwIYBsDOBTANCAPZQDaIAzAKzUAMA7CALqEAOALlCAMrsBOASwB2AcxABfQgDYAnIhApIGHAWJkQAFjBg4MxixAcuvQaImE4CaArRY8hEpHLwwW2iEJ6qYCszadIHn5hMUkQKl15RWV7NSdNWipaWhg-QwCg01DCMHoZd2tou1VHcj0YKTSjQJMQ83AZSMLbFQd1dyYwmFowVOalYrb4sFoKWgQc2ikaD3BxyyqM2rMunqtkFtjShopInJld-X9jYJXCGFy%2BjYHWuPIIA2qQADkAVwBbXEEUMIBaK5skH4rxK6iozHEXXUqFw7ywuAABAALXDoAAmX2wEKAA) / [Digikey 8 pin](https://www.digikey.com/en/products/detail/sullins-connector-solutions/PPTC081LFBN-RC/810147) / [Digikey 15 pin](https://www.digikey.com/en/products/detail/sullins-connector-solutions/PPTC151LFBN-RC/810153) |
 
 ### Component Design Notes & Constraints
 - **LED Strip:**
@@ -72,9 +75,18 @@ All components will be hand-soldered, so they must be through-hole or larger foo
 
 ---
 
-## Must-have checklist for schematic & PCB layout
+## Schematic & PCB
 
-### Schematic & wiring
+Buttons and screen should be mounted to top of PCB, while everything else gets mounted to bottom. This is so that the buttons and screen are accessible through the 3D printed enclosure without being crowded by the other components. Admittedly, they will still need to avoid the through-hole solder pads of the other components coming up through the bottom of the PCB.
+
+Pin headers and standoffs: I plan to use these for the RTC and Arduino on the underside of the PCB, but not for the OLED screen on the top, so that the OLED is more or less on the same plane as the buttons. Hopefully a better user interface that way - not an awkward plane difference where the screen sticks out more than the buttons.
+
+
+
+
+
+
+### Schematic / wiring
 - **Common Ground:** Connect `GND` across all subsystems (Arduino, RTC, OLED, LED power supply ground, MOSFET source/pull-down resistor, and buttons).
 - **MOSFET Gate Pull-Down Resistor ($10\text{ k}\Omega$):** Place a $10\text{ k}\Omega$ resistor between MOSFET Gate and Source/GND to keep the MOSFET firmly off while the Arduino Nano boots and its pins float (prevents the LED strip from flashing at full brightness on power-up).
 - **MOSFET Gate Series Resistor ($220\text{--}330\ \Omega$):** Place a $220\text{--}330\ \Omega$ resistor in series between the Arduino PWM output pin and the MOSFET Gate to limit sharp capacitive current spikes on PWM edges.
@@ -82,10 +94,10 @@ All components will be hand-soldered, so they must be through-hole or larger foo
 - **PWM Pin Selection:** Route the MOSFET gate drive to `D9` or `D10` (16-bit Timer 1) if possible for flicker-free high-frequency PWM, or `D3`/`D11` (Timer 2). Avoid `D5`/`D6` (Timer 0 quirk where `analogWrite(pin, 0)` may not produce true 0% duty cycle).
 - **I2C Bus (`A4` / `A5`):** Route `A4` (`SDA`) and `A5` (`SCL`) to both the DS3231 RTC and SSD1306 OLED.
 
-### Footprint & PCB layout
-- [ ] **Verify Pinouts Against Datasheets:** Double-check all downloaded symbols/footprints against datasheets—especially **Gate / Drain / Source** pin numbers on the `RFP30N06LE` MOSFET.
-- [ ] **Slotted Holes for Barrel Jacks:** Ensure the barrel jack footprint uses **slotted holes** (`Slot` hole type in Altium) for its flat blade pins rather than round holes. Verify the slot dimensions against the datasheet or caliper measurements.
-- [ ] **Barrel Jack Overhang:** Consider placing the barrel jacks along the board edge with **1–2mm of overhang** off the side of the PCB for clean mating through the thickness of the 3D printed enclosure. Consider that this might cause difficulties with inserting the soldered/assembled PCB into the enclosure.
+### Footprint / PCB layout
+- **Verify Pinouts Against Datasheets:** Double-check all downloaded symbols/footprints against datasheets—especially **Gate / Drain / Source** pin numbers on the `RFP30N06LE` MOSFET.
+- **Slotted Holes for Barrel Jacks:** Ensure the barrel jack footprint uses **slotted holes** (`Slot` hole type in Altium) for its flat blade pins rather than round holes. Verify the slot dimensions against the datasheet or caliper measurements.
+- **Barrel Jack Overhang:** Consider placing the barrel jacks along the board edge with **1–2mm of overhang** off the side of the PCB for clean mating through the thickness of the 3D printed enclosure. Consider that this might cause difficulties with inserting the soldered/assembled PCB into the enclosure.
 
 ---
 
